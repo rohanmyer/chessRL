@@ -21,9 +21,6 @@ for episode in range(1000):
         agent.update(state, legal_moves, action, next_state, reward)
         state = next_state
         rewards += reward
-        if count % 20 == 0:
-            print(f"Episode {episode+1}, Reward: {rewards}, Moves: {count}")
-            print("State: \n", env.board)
     print(f"Episode {episode+1}, Reward: {rewards}, Moves: {count}")
     print("State: \n", env.board)
 

@@ -2,13 +2,14 @@ import chess
 import chess.engine
 import gym
 import numpy as np
+import random
 
 WIN_SCORE = 1000
 DRAW_SCORE = 500
 
 ENGINE_LIMIT = chess.engine.Limit(depth=20)
 
-STOCKFISH_PATH = "stockfish"
+STOCKFISH_PATH = "data/stockfish"
 
 
 class ChessEnv(gym.Env):
@@ -52,7 +53,7 @@ class ChessEnv(gym.Env):
             return self.state, reward, done, {}
 
         # Get the engine's move
-        result = self.engine.play(self.board, ENGINE_LIMIT)
+        result = self._engine_move(self.state)
         self.board.push(result.move)
         self.state = self.board.fen()
         if self.board.is_checkmate():
@@ -62,7 +63,52 @@ class ChessEnv(gym.Env):
         done = self.board.is_game_over()
         return self.state, reward, done, {}
 
+    def _engine_move(self, fen_state):
+        return self.engine.play(fen_state, ENGINE_LIMIT).move
+
     def reset(self):
         self.board = chess.Board()
         self.state = self.board.fen()
         return self.state
+
+
+class ChessEnvPuzzle(ChessEnv):
+    def __init__(self, puzzles):
+        """
+        Args:
+            puzzles (list): List of puzzles in the form of a dictionary with keys 'fen' and 'best_move'
+        """
+        super().__init__()
+        self.current_puzzle = None
+        self.index = -1
+        self.puzzles = puzzles
+        self.load_puzzle()
+
+    def load_puzzle(self):
+        self.index += 1
+        if self.index >= len(self.puzzles):
+            self.index = 0
+        self.current_puzzle = self.puzzles[self.index]
+        self.board.set_fen(self.current_puzzle["fen"])
+        self.state = self.board.fen()
+
+    def step(self, action):
+        legal_moves = list(self.board.legal_moves)
+        move = legal_moves[action]
+        self.board.push(move)
+
+        # Get the reward
+        if self.board.is_checkmate():
+            reward = 1000
+        elif move.uci() == self.current_puzzle["best_move"]:
+            reward = 750
+        else:
+            reward = -250
+
+        self.reset()
+
+        return self.state, reward, True, {}
+
+    def reset(self):
+        self.load_puzzle()
+        return self.board

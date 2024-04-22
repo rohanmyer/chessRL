@@ -8,10 +8,12 @@ DRAW_SCORE = 500
 
 ENGINE_LIMIT = chess.engine.Limit(depth=20)
 
+STOCKFISH_PATH = "stockfish"
+
 
 class ChessEnv(gym.Env):
     def __init__(self):
-        self.engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+        self.engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
         self.board = chess.Board()
         self.state = self.board.fen()
 

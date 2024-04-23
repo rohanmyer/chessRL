@@ -3,7 +3,10 @@ import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
 import os
 
-from RLC import agent, environment, learn, tree
+import agent
+import environment
+import learn
+import tree
 import chess
 from chess.pgn import Game
 

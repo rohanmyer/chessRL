@@ -28,7 +28,7 @@ class QLearningAgent:
     def update(self, state, legal_moves, action, next_state, reward):
         # Update Q-values using Q-learning update rule
         q_value = self.q_values.get(state, [0] * len(legal_moves))[action]
-        next_q_value = self.q_values.get(next_state, [0] * len(legal_moves))[action]
+        next_q_value = np.max(self.q_values.get(next_state, [0] * len(legal_moves)))
         self.q_values[state] = self.q_values.get(state, [0] * len(legal_moves))
         self.q_values[state][action] = q_value + self.alpha * (
             reward + self.gamma * next_q_value - q_value

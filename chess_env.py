@@ -8,12 +8,15 @@ DRAW_SCORE = 500
 
 ENGINE_LIMIT = chess.engine.Limit(depth=20)
 
-STOCKFISH_PATH = "data/stockfish"
+STOCKFISH_PATH = "/oscar/data/csun45/rkrish16/other/chessRL/data/stockfish/"
 
 
 class ChessEnv(gym.Env):
-    def __init__(self):
-        self.engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
+    def __init__(self, load_engine=True):
+        if load_engine:
+            self.engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
+        else:
+            self.engine = None
         self.board = chess.Board()
         self.state = self.board.fen()
 
@@ -38,10 +41,10 @@ class ChessEnv(gym.Env):
 
         if self.board.is_checkmate():
             reward = WIN_SCORE
-            print("checkmate!")
+            # print("checkmate!")
         elif self.board.is_stalemate() or self.board.is_insufficient_material():
             reward = DRAW_SCORE
-            print("draw!")
+            # print("draw!")
 
         # Get the next state
         self.state = self.board.fen()
@@ -71,13 +74,13 @@ class ChessEnv(gym.Env):
         return self.state
 
 
-class ChessEnvPuzzle(ChessEnv):
+class ChessPuzzleEnv(ChessEnv):
     def __init__(self, puzzles):
         """
         Args:
             puzzles (list): List of puzzles in the form of a dictionary with keys 'fen' and 'best_move'
         """
-        super().__init__()
+        super().__init__(load_engine=False)
         self.current_puzzle = None
         self.index = -1
         self.puzzles = puzzles
@@ -110,4 +113,4 @@ class ChessEnvPuzzle(ChessEnv):
 
     def reset(self):
         self.load_puzzle()
-        return self.board
+        return self.board.fen()

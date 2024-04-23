@@ -19,7 +19,11 @@ def build_puzzles(row):
 
     puzzles = []
     for move in moves[1:]:
-        puzz = {"fen": board.fen(), "best_move": move}
+        if board.turn:
+            color = "white"
+        else:
+            color = "black"
+        puzz = {"fen": board.fen(), "best_move": move, "color": color}
         puzzles.append(puzz)
         board.push_uci(move)
     return puzzles

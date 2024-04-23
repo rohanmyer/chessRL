@@ -10,8 +10,12 @@ COUNT_PER_SAVE = 1000000
 # Load the puzzles
 print("Loading the puzzles...")
 with open("data/lichess_puzzles.pkl", "rb") as file:
-    puzzles = pickle.load(file)
-print(f"Number of puzzles: {len(puzzles)}") # 14,031,988
+    data = pickle.load(file)
+puzzles = []
+for puzz in data:
+    if puzz['color'] == 'white':
+        puzzles.append(puzz)
+print(f"Number of puzzles: {len(puzzles)}") # 14,031,988 total
 
 # Create the environment and agent
 env = ChessPuzzleEnv(puzzles)
@@ -61,4 +65,4 @@ np.save("q_values.npy", agent.q_values)
 # agent.q_values = np.load("q_values.npy", allow_pickle=True).item()
 
 # Close the engine
-env.e
+env.engine.quit()

@@ -97,23 +97,31 @@ class Node(object):
                 result = env.board.result()
 
                 if (result == "1-0" and env.board.turn) or (
-                        result == "0-1" and not env.board.turn):
+                    result == "0-1" and not env.board.turn
+                ):
                     env.board.pop()
                     env.init_layer_board()
                     break
                 else:
                     if env.board.turn:
                         sucval = reward + self.gamma * np.squeeze(
-                            model.predict(np.expand_dims(env.layer_board, axis=0)))
+                            model.predict(np.expand_dims(env.layer_board, axis=0))
+                        )
                     else:
-                        sucval = np.squeeze(env.opposing_agent.predict(np.expand_dims(env.layer_board, axis=0)))
+                        sucval = np.squeeze(
+                            env.opposing_agent.predict(
+                                np.expand_dims(env.layer_board, axis=0)
+                            )
+                        )
                     successor_values.append(sucval)
                     env.board.pop()
                     env.init_layer_board()
 
             if not episode_end:
                 if env.board.turn:
-                    move_probas = softmax(np.array(successor_values), temperature=temperature)
+                    move_probas = softmax(
+                        np.array(successor_values), temperature=temperature
+                    )
                     moves = [x for x in env.board.generate_legal_moves()]
                 else:
                     move_probas = np.zeros(len(successor_values))
@@ -129,9 +137,13 @@ class Node(object):
         if episode_end:
             Returns = reward
         elif depth >= max_depth:  # Bootstrap the Monte Carlo Playout
-            Returns = reward + self.gamma * np.squeeze(model.predict(np.expand_dims(env.layer_board, axis=0)))
+            Returns = reward + self.gamma * np.squeeze(
+                model.predict(np.expand_dims(env.layer_board, axis=0))
+            )
         else:  # Recursively continue
-            Returns = reward + self.gamma * self.simulate(model, env, depth=depth + 1,temperature=temperature)
+            Returns = reward + self.gamma * self.simulate(
+                model, env, depth=depth + 1, temperature=temperature
+            )
 
         env.board.pop()
         env.init_layer_board()

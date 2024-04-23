@@ -83,7 +83,9 @@ class Board(object):
         self.board.push(action)
         self.update_layer_board(action)
         piece_balance_after = self.get_material_value()
-        auxiliary_reward = (piece_balance_after - piece_balance_before) * self.capture_reward_factor
+        auxiliary_reward = (
+            piece_balance_after - piece_balance_before
+        ) * self.capture_reward_factor
         result = self.board.result()
         if result == "*":
             reward = 0
@@ -118,7 +120,9 @@ class Board(object):
         Returns: np.ndarray with shape (64,64)
         """
         self.action_space = np.zeros(shape=(64, 64))
-        moves = [[x.from_square, x.to_square] for x in self.board.generate_legal_moves()]
+        moves = [
+            [x.from_square, x.to_square] for x in self.board.generate_legal_moves()
+        ]
         for move in moves:
             self.action_space[move[0], move[1]] = 1
         return self.action_space

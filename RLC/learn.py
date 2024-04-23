@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from RLC.real_chess.tree import Node
+from tree import Node
 import math
 import gc
 
@@ -15,7 +15,16 @@ def sigmoid(x):
 
 class TD_search(object):
 
-    def __init__(self, env, agent, gamma=0.9, search_time=1, memsize=2000, batch_size=256, temperature=1):
+    def __init__(
+        self,
+        env,
+        agent,
+        gamma=0.9,
+        search_time=1,
+        memsize=2000,
+        batch_size=256,
+        temperature=1,
+    ):
         """
         Chess algorithm that combines bootstrapped monte carlo tree search with Q Learning
         Args:
@@ -105,7 +114,9 @@ class TD_search(object):
                             max_value = sampled_value
                             max_move = move
                 else:
-                    max_move = np.random.choice([move for move in self.env.board.generate_legal_moves()])
+                    max_move = np.random.choice(
+                        [move for move in self.env.board.generate_legal_moves()]
+                    )
 
             # Black's turn is myopic
             else:
@@ -119,7 +130,8 @@ class TD_search(object):
                         self.env.init_layer_board()
                         break
                     successor_state_value_opponent = self.env.opposing_agent.predict(
-                        np.expand_dims(self.env.layer_board, axis=0))
+                        np.expand_dims(self.env.layer_board, axis=0)
+                    )
                     if successor_state_value_opponent > max_value:
                         max_move = move
                         max_value = successor_state_value_opponent
@@ -127,7 +139,10 @@ class TD_search(object):
                     self.env.board.pop()
                     self.env.init_layer_board()
 
-            if not (self.env.board.turn and max_move not in tree.children.keys()) or not k > start_mcts_after:
+            if (
+                not (self.env.board.turn and max_move not in tree.children.keys())
+                or not k > start_mcts_after
+            ):
                 tree.children[max_move] = Node(gamma=0.9, parent=tree)
 
             episode_end, reward = self.env.step(max_move)
@@ -169,7 +184,15 @@ class TD_search(object):
 
         piece_balance = self.env.get_material_value()
         self.piece_balance_trace.append(piece_balance)
-        print("game ended with result", reward, "and material balance", piece_balance, "in", turncount, "halfmoves")
+        print(
+            "game ended with result",
+            reward,
+            "and material balance",
+            piece_balance,
+            "in",
+            turncount,
+            "halfmoves",
+        )
 
         return self.env.board
 
@@ -180,8 +203,12 @@ class TD_search(object):
             None
         """
         if self.ready:
-            choice_indices, states, rewards, sucstates, episode_active = self.get_minibatch()
-            td_errors = self.agent.TD_update(states, rewards, sucstates, episode_active, gamma=self.gamma)
+            choice_indices, states, rewards, sucstates, episode_active = (
+                self.get_minibatch()
+            )
+            td_errors = self.agent.TD_update(
+                states, rewards, sucstates, episode_active, gamma=self.gamma
+            )
             self.mem_error[choice_indices.tolist()] = td_errors
 
     def get_minibatch(self, prioritized=True):
@@ -199,12 +226,12 @@ class TD_search(object):
             sampling_priorities = np.ones(shape=self.mem_error.shape)
         sampling_probs = sampling_priorities / np.sum(sampling_priorities)
         sample_indices = [x for x in range(self.mem_state.shape[0])]
-        choice_indices = np.random.choice(sample_indices,
-                                          min(self.mem_state.shape[0],
-                                              self.batch_size),
-                                          p=np.squeeze(sampling_probs),
-                                          replace=False
-                                          )
+        choice_indices = np.random.choice(
+            sample_indices,
+            min(self.mem_state.shape[0], self.batch_size),
+            p=np.squeeze(sampling_probs),
+            replace=False,
+        )
         states = self.mem_state[choice_indices]
         rewards = self.mem_reward[choice_indices]
         sucstates = self.mem_sucstate[choice_indices]
@@ -238,7 +265,9 @@ class TD_search(object):
                 successor_state_value = 0
             else:
                 successor_state_value = np.squeeze(
-                    self.agent.model.predict(np.expand_dims(self.env.layer_board, axis=0))
+                    self.agent.model.predict(
+                        np.expand_dims(self.env.layer_board, axis=0)
+                    )
                 )
 
             child_value = reward + self.gamma * successor_state_value
@@ -249,7 +278,9 @@ class TD_search(object):
         if not node.values:
             node.values = [0]
 
-        while starttime + self.search_time > time.time() or sim_count < self.min_sim_count:
+        while (
+            starttime + self.search_time > time.time() or sim_count < self.min_sim_count
+        ):
             depth = 0
             color = 1
             node_rewards = []
@@ -263,17 +294,23 @@ class TD_search(object):
                 else:
                     depth += 1
                     color = color * -1  # switch color
-                    episode_end, reward = self.env.step(move)  # Update the environment to reflect the node
+                    episode_end, reward = self.env.step(
+                        move
+                    )  # Update the environment to reflect the node
                     node_rewards.append(reward)
                     # Check best node is terminal
 
-                    if self.env.board.result() == "1-0" and depth == 1:  # -> Direct win for white, no need for mcts.
+                    if (
+                        self.env.board.result() == "1-0" and depth == 1
+                    ):  # -> Direct win for white, no need for mcts.
                         self.env.board.pop()
                         self.env.init_layer_board()
                         node.update(1)
                         node = node.parent
                         return node
-                    elif episode_end:  # -> if the explored tree leads to a terminal state, simulate from root.
+                    elif (
+                        episode_end
+                    ):  # -> if the explored tree leads to a terminal state, simulate from root.
                         while node.parent:
                             self.env.board.pop()
                             self.env.init_layer_board()
@@ -283,10 +320,9 @@ class TD_search(object):
                         continue
 
             # Expand the game tree with a simulation
-            Returns, move = node.simulate(self.agent.fixed_model,
-                                          self.env,
-                                          temperature=self.temperature,
-                                          depth=0)
+            Returns, move = node.simulate(
+                self.agent.fixed_model, self.env, temperature=self.temperature, depth=0
+            )
             self.env.init_layer_board()
 
             if move not in node.children.keys():

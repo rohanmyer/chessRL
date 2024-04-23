@@ -7,6 +7,8 @@ from tqdm import tqdm
 
 tqdm.pandas()
 
+PUZZLE_PATH = "data/lichess_db_puzzle.csv.zst"
+
 
 def build_puzzles(row):
     fen = row["FEN"]
@@ -25,7 +27,7 @@ def build_puzzles(row):
 
 # Open the file in read binary mode
 print("Reading the compressed file...")
-with open("data/lichess_db_puzzle.csv.zst", "rb") as file:
+with open(PUZZLE_PATH, "rb") as file:
     # Create a Zstandard decompressor object
     dctx = zstd.ZstdDecompressor()
     # Decompress the file into a bytes object

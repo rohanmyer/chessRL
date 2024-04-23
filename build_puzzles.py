@@ -46,7 +46,7 @@ puzzles = [p for sublist in puzzle_list for p in sublist]
 
 # Save the puzzles to a file
 print("Saving the puzzles...")
-with open("../data/lichess_puzzles.pkl", "wb") as file:
+with open("data/lichess_puzzles.pkl", "wb") as file:
     pickle.dump(puzzles, file)
 
 print("Done!")

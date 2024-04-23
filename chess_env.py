@@ -2,7 +2,6 @@ import chess
 import chess.engine
 import gym
 import numpy as np
-import random
 
 WIN_SCORE = 1000
 DRAW_SCORE = 500
@@ -99,11 +98,11 @@ class ChessEnvPuzzle(ChessEnv):
 
         # Get the reward
         if self.board.is_checkmate():
-            reward = 1000
+            reward = WIN_SCORE
         elif move.uci() == self.current_puzzle["best_move"]:
-            reward = 750
+            reward = WIN_SCORE * 0.75
         else:
-            reward = -250
+            reward = -1 * DRAW_SCORE
 
         self.reset()
 

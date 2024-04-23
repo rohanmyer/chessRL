@@ -14,7 +14,11 @@ env = ChessPuzzleEnv(puzzles)
 agent = QLearningAgent()
 
 # Train the agent
-for episode in range(1000):
+from tqdm import tqdm
+pbar = tqdm(range(1000))
+# for episode in range(1000):
+episode = 0
+while True:
     state = env.reset()
     done = False
     rewards = 0
@@ -27,6 +31,14 @@ for episode in range(1000):
     rewards += reward
     print(f"Episode {episode+1}, Reward: {rewards}")
     print("State: \n", env.board)
+    episode += 1
+    pbar.update(1)
+
+    if episode % 1000 == 0:
+        print("Saving the Q-values...")
+        np.save(f"weights/puzzle_q_values_{episode}.npy", agent.q_values)
+        pbar.refresh()
+        pbar.reset()
 
 # Save the Q-values
 np.save("q_values.npy", agent.q_values)

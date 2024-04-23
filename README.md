@@ -2,17 +2,31 @@
 
 ## Setup
 
+### 1. Setup Filestructure
+
+From the root of this project, `mkdir data`.
+
 ### 1. Download Stockfish
 
 Download the appropriate Stockfish binaries:
 
-Linux: https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar
+`cd data`
 
-MacOS: https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-macos-m1-apple-silicon.tar
+#### Linux: 
+`wget https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar`
+
+`tar -xvf stockfish-ubuntu-x86-64-avx2.tar`
+
+#### MacOS: 
+`wget https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-macos-m1-apple-silicon.tar`
 
 ### 2. Download Puzzles
 
 Download the puzzles from https://database.lichess.org/lichess_db_puzzle.csv.zst
+
+`cd data`
+
+`wget https://database.lichess.org/lichess_db_puzzle.csv.zst`
 
 ### 3. Build Puzzles
 

@@ -59,7 +59,7 @@ class ChessEnv(gym.Env):
 
         # Get the engine's move
         result = self._engine_move(self.state)
-        self.board.push(result.move)
+        self.board.push(result)
         self.state = self.board.fen()
         if self.board.is_checkmate():
             reward = -1 * WIN_SCORE

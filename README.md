@@ -4,7 +4,13 @@
 
 ### 1. Setup Filestructure
 
-From the root of this project, `mkdir data`.
+#### Install Dependencies
+
+`pip install -r requirements.txt`
+
+#### Create data and weights folders
+
+From the root of this project, `mkdir data` and `mkdir weights`.
 
 ### 1. Download Stockfish
 

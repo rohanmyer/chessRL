@@ -8,7 +8,10 @@ DRAW_SCORE = 500
 
 ENGINE_LIMIT = chess.engine.Limit(depth=20)
 
-STOCKFISH_PATH = "/oscar/data/csun45/rkrish16/other/chessRL/data/stockfish/"
+# STOCKFISH_PATH = "/oscar/data/csun45/rkrish16/other/chessRL/data/stockfish/"
+STOCKFISH_PATH = (
+    "/Users/rohan/Documents/chessRL/data/stockfish/stockfish-macos-m1-apple-silicon"
+)
 
 
 class ChessEnv(gym.Env):
@@ -66,7 +69,7 @@ class ChessEnv(gym.Env):
         return self.state, reward, done, {}
 
     def _engine_move(self, fen_state):
-        return self.engine.play(fen_state, ENGINE_LIMIT).move
+        return self.engine.play(self.board, ENGINE_LIMIT)
 
     def reset(self):
         self.board = chess.Board()

@@ -201,7 +201,7 @@ class Agent(object):
             state_batch = state_batch + [state for x in range(predictions_per_state)]
 
         state_batch = np.stack(state_batch, axis=0)
-        predictions = self.model.predict(state_batch)
+        predictions = self.model.predict(state_batch, verbose=0)
         predictions = predictions.reshape(len(states), predictions_per_state)
         mean_pred = np.mean(predictions, axis=1)
         std_pred = np.std(predictions, axis=1)
@@ -210,7 +210,7 @@ class Agent(object):
         return mean_pred, std_pred, upper_bound
 
     def predict(self, board_layer):
-        return self.model.predict(board_layer)
+        return self.model.predict(board_layer, verbose=0)
 
     def TD_update(self, states, rewards, sucstates, episode_active, gamma=0.9):
         """
@@ -224,31 +224,23 @@ class Agent(object):
                 array of temporal difference errors
 
         """
-        suc_state_values = self.fixed_model.predict(sucstates)
+        suc_state_values = self.fixed_model.predict(sucstates, verbose=0)
         V_target = np.array(rewards) + np.array(episode_active) * gamma * np.squeeze(
             suc_state_values
         )
         # Perform a step of minibatch Gradient Descent.
         self.model.fit(x=states, y=V_target, epochs=1, verbose=0)
 
-        V_state = self.model.predict(states)  # the expected future returns
+        V_state = self.model.predict(states, verbose=0)  # the expected future returns
         td_errors = V_target - np.squeeze(V_state)
 
         return td_errors
 
-    def MC_update(self, states, returns):
-        """
-        Update network using a monte carlo playout
-        Args:
-            states: starting states
-            returns: discounted future rewards
+    def save(self, path):
+        self.model.save(path)
 
-        Returns:
-            td_errors: np.array
-                array of temporal difference errors
-        """
-        self.model.fit(x=states, y=returns, epochs=0, verbose=0)
-        V_state = np.squeeze(self.model.predict(states))
-        td_errors = returns - V_state
-
-        return td_errors
+    def load(self, path):
+        print(f"Loading model from {path}")
+        self.model = load_model(path)
+        self.model.compile(optimizer=self.optimizer, loss=mean_squared_error)
+        self.fix_model()

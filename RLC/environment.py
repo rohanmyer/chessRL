@@ -103,6 +103,27 @@ class Board(object):
 
         return episode_end, reward
 
+    def puzzle_step(self, action, answer):
+        piece_balance_before = self.get_material_value()
+        self.board.push(action)
+        self.update_layer_board(action)
+        piece_balance_after = self.get_material_value()
+        auxiliary_reward = (
+            piece_balance_after - piece_balance_before
+        ) * self.capture_reward_factor
+        if self.board.is_checkmate():
+            reward = 1
+            episode_end = True
+        elif action.uci() == answer:
+            reward = 1
+            episode_end = True
+        else:
+            reward = -1
+            episode_end = True
+        reward += auxiliary_reward
+
+        return episode_end, reward
+
     def get_random_action(self):
         """
         Sample a random action

@@ -41,9 +41,10 @@ class GreedyAgent(object):
 class Agent(object):
 
     def __init__(self, lr=0.003, network="big"):
-        self.optimizer = RMSprop(lr=lr)
+        self.optimizer = RMSprop(learning_rate=lr)
         self.model = Model()
         self.proportional_error = False
+        self.network = network
         if network == "simple":
             self.init_simple_network()
         elif network == "super_simple":
@@ -211,6 +212,9 @@ class Agent(object):
 
     def predict(self, board_layer):
         return self.model.predict(board_layer, verbose=0)
+
+    def predict_batch(self, board_layers):
+        return self.model.predict_on_batch(board_layers)
 
     def TD_update(self, states, rewards, sucstates, episode_active, gamma=0.9):
         """

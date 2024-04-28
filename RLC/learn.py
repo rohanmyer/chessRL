@@ -3,6 +3,7 @@ import time
 import math
 import gc
 from tqdm import tqdm
+import random
 
 
 def softmax(x, temperature=1):
@@ -37,7 +38,7 @@ class TD_search(object):
         self.reward_trace = []
         self.piece_balance_trace = []
 
-    def learn(self, iters=40, c=5, timelimit_seconds=3600, maxiter=80):
+    def learn(self, iters=40, c=20, timelimit_seconds=3600, maxiter=80):
         """
         Start the learning process for the chess agent.
         Args:
@@ -47,14 +48,15 @@ class TD_search(object):
             maxiter: Maximum number of moves per game
         """
         starttime = time.time()
-        for k in range(iters):
+        for k in tqdm(range(iters)):
             self.env.reset()
             if k % c == 0:
                 self.agent.fix_model()
-                print("Iteration", k)
+                self.agent.save(f"game_{self.agent.network}")
+                np.save("game_reward_trace.npy", self.reward_trace)
             self.play_game(maxiter)
-            if starttime + timelimit_seconds < time.time():
-                break
+            # if starttime + timelimit_seconds < time.time():
+            #     break
 
     def play_game(self, maxiter):
         """
@@ -66,7 +68,7 @@ class TD_search(object):
         episode_end = False
         turn_count = 0
 
-        pbar = tqdm(total=maxiter, desc="Moves in game")
+        # pbar = tqdm(total=maxiter, desc="Moves in game")
         while not episode_end and turn_count < maxiter:
             state = np.expand_dims(self.env.layer_board.copy(), axis=0)
             move = self.select_move(state)
@@ -81,21 +83,25 @@ class TD_search(object):
             turn_count += 1
             if turn_count % 10 == 0:
                 self.update_agent()
-            pbar.update(1)
+            # pbar.update(1)
 
-        print(f"Game ended with reward {reward} in {turn_count} half-moves.")
+        # print(f"Game ended with reward {reward} in {turn_count} half-moves.")
 
     def select_move(self, state):
         """
         Select a move based on the current state of the board.
         """
-        move_values = {}
+        next_states = []
         for move in self.env.board.generate_legal_moves():
             self.env.step(move)
-            next_state = np.expand_dims(self.env.layer_board, axis=0)
-            move_values[move] = self.agent.predict(next_state)
+            next_state = self.env.layer_board.copy()
+            next_states.append(next_state)
             self.env.board.pop()
-        best_move = max(move_values, key=move_values.get)
+
+        next_states = np.array(next_states)
+        move_values = self.agent.predict_batch(next_states)
+        move_idx = np.argmax(move_values)
+        best_move = list(self.env.board.generate_legal_moves())[move_idx]
         return best_move
 
     def compute_error(self, state, reward, sucstate):
@@ -156,3 +162,59 @@ class TD_search(object):
         self.mem_error = self.mem_error[1:]
         self.mem_episode_active = self.mem_episode_active[1:]
         gc.collect()
+
+
+class PuzzleLearner(TD_search):
+    def __init__(self, env, agent, puzzles):
+        super(PuzzleLearner, self).__init__(env, agent)
+        self.current_puzzle = None
+        self.index = -1
+        self.puzzles = puzzles
+        self.load_puzzle()
+
+    def load_puzzle(self):
+        # self.index += 1
+        # if self.index >= len(self.puzzles):
+        #     self.index = 0
+        self.index = random.randint(0, len(self.puzzles) - 1)
+        self.current_puzzle = self.puzzles[self.index]
+        self.env.reset()
+        self.env.board.set_fen(self.current_puzzle["fen"])
+        self.env.init_layer_board()
+
+    def learn(self, iters=40, c=100, timelimit_seconds=3600):
+        """
+        Start the learning process for the chess agent.
+        Args:
+            iters: Number of iterations to train for
+            c: Frequency of updating the agent model
+            timelimit_seconds: Time limit for the training session
+            maxiter: Maximum number of moves per game
+        """
+        starttime = time.time()
+        for k in tqdm(range(iters)):
+            if k % c == 0:
+                self.agent.fix_model()
+            if k % 10 == 0:
+                self.update_agent()
+            if k % 1000 == 0:
+                self.agent.save(f"puzzle_{self.agent.network}")
+                np.save("puzzle_reward_trace.npy", self.reward_trace)
+            self.play_puzzle()
+            # if starttime + timelimit_seconds < time.time():
+            #     break
+
+    def play_puzzle(self):
+        """
+        Play a single puzzle.
+        """
+        state = np.expand_dims(self.env.layer_board.copy(), axis=0)
+        move = self.select_move(state)
+        answer = self.current_puzzle["best_move"]
+        episode_end, reward = self.env.puzzle_step(move, answer)
+        sucstate = np.expand_dims(self.env.layer_board, axis=0)
+        error = self.compute_error(state, reward, sucstate)
+
+        self.record_experience(state, reward, 0, sucstate, error, episode_end)
+
+        self.load_puzzle()

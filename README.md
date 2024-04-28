@@ -10,13 +10,11 @@
 
 #### Create data and weights folders
 
-From the root of this project, `mkdir data` and `mkdir weights`.
+Create a `data` folder from the root of this project. Create two folders, one for `logs` and one for `weights` inside `rl_chess`.
 
 ### 1. Download Stockfish
 
-Download the appropriate Stockfish binaries:
-
-`cd data`
+Download the appropriate Stockfish binaries inside the `data` folder:
 
 #### Linux: 
 `wget https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar`
@@ -30,7 +28,7 @@ Download the appropriate Stockfish binaries:
 
 Download the puzzles from https://database.lichess.org/lichess_db_puzzle.csv.zst
 
-`cd data`
+From the `data` folder:
 
 `wget https://database.lichess.org/lichess_db_puzzle.csv.zst`
 
@@ -38,10 +36,14 @@ Download the puzzles from https://database.lichess.org/lichess_db_puzzle.csv.zst
 
 Specify the path to the puzzle file in `build_puzzles.py` and then run `python build_puzzles.py`
 
+## Train From Self-Play
+
+To train an RL agent to play by playing against itself, run `python main.py self`
+
 ## Train With Puzzles
 
-To train an RL agent to play from puzzle scenarios, run `python puzzle_train.py`
+To train an RL agent to play from puzzle scenarios, run `python main.py puzzle`
 
 ## Train Against Stockfish
 
-To train an RL agent to play from full games against the Stockfish engine, run `python train_agent.py`
+To train an RL agent to play from full games against the Stockfish engine, run `python main.py engine`

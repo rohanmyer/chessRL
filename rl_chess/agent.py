@@ -40,9 +40,10 @@ class GreedyAgent(object):
 
 
 class EngineAgent(object):
-    def __init__(self, engine_path):
+    def __init__(self, engine_path, color="black"):
         self.engine = chess.engine.SimpleEngine.popen_uci(engine_path)
         self.limit = chess.engine.Limit(depth=10)
+        self.color = color
 
     def predict(self, board):
         result = self.engine.play(board, self.limit)

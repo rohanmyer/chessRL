@@ -11,8 +11,8 @@ player = agent.Agent(lr=0.01, network=NETWORK)
 
 
 def self_train():
-    if os.path.exists(f"game_{NETWORK}"):
-        player.load(f"game_{NETWORK}")
+    if os.path.exists(f"{WEIGHTS_PATH}/self_{NETWORK}"):
+        player.load(f"{WEIGHTS_PATH}/self_{NETWORK}")
     learner = learn.TD_search(env, player, gamma=0.8)
     player.model.summary()
 
@@ -26,8 +26,8 @@ def puzzle_train():
         puzzles = pickle.load(file)
     print(f"Number of puzzles: {len(puzzles)}")  # 14,031,988 total
 
-    if os.path.exists(f"puzzle_{NETWORK}"):
-        player.load(f"puzzle_{NETWORK}")
+    if os.path.exists(f"{WEIGHTS_PATH}/puzzle_{NETWORK}"):
+        player.load(f"{WEIGHTS_PATH}/puzzle_{NETWORK}")
     learner = learn.PuzzleLearner(env, player, puzzles)
     player.model.summary()
 
@@ -36,8 +36,9 @@ def puzzle_train():
 
 def engine_train():
     opponent = agent.EngineAgent(ENGINE_PATH)
-    if os.path.exists(f"engine_{NETWORK}"):
-        player.load(f"engine_{NETWORK}")
+    name = f"{opponent.color}_engine"
+    if os.path.exists(f"{WEIGHTS_PATH}/{name}_{NETWORK}"):
+        player.load(f"{WEIGHTS_PATH}/{name}_{NETWORK}")
     learner = learn.EngineLearner(env, player, opponent)
     player.model.summary()
 

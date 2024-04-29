@@ -123,7 +123,7 @@ class Board(object):
 
         return episode_end, reward
 
-    def engine_step(self, action, engine):
+    def _black_engine_step(self, action, engine):
         piece_balance_before = self.get_material_value()
         self.board.push(action)
         self.update_layer_board(action)
@@ -147,6 +147,37 @@ class Board(object):
         reward += auxiliary_reward
 
         return episode_end, reward
+
+    def _white_engine_step(self, action, engine):
+        engine_move = engine.predict(self.board)
+        self.board.push(engine_move)
+        self.update_layer_board(engine_move)
+        piece_balance_after = self.get_material_value()
+        if self.board.is_checkmate():
+            reward = -1
+            episode_end = True
+        else:
+            piece_balance_before = self.get_material_value()
+            self.board.push(action)
+            self.update_layer_board(action)
+            auxiliary_reward = (
+                piece_balance_after - piece_balance_before
+            ) * self.capture_reward_factor
+            if self.board.is_checkmate():
+                reward = 1
+                episode_end = True
+            else:
+                reward = 0
+                episode_end = False
+        reward += auxiliary_reward
+
+        return episode_end, reward
+
+    def engine_step(self, action, engine):
+        if engine.color == "white":
+            return self._white_engine_step(action, engine)
+        else:
+            return self._black_engine_step(action, engine)
 
     def get_random_action(self):
         """

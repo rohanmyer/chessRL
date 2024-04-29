@@ -231,7 +231,8 @@ class PuzzleLearner(TD_search):
 
 class EngineLearner(TD_search):
     def __init__(self, env, agent, opponent):
-        super(EngineLearner, self).__init__(env, agent, name="engine")
+        name = f"{opponent.color}_engine"
+        super(EngineLearner, self).__init__(env, agent, name=name)
         self.opponent = opponent
 
     def play_game(self, maxiter):

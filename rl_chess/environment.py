@@ -1,4 +1,5 @@
 import chess
+import chess.engine
 import numpy as np
 
 mapper = {}
@@ -32,6 +33,12 @@ class Board(object):
         self.board = chess.Board(self.FEN) if self.FEN else chess.Board()
         self.layer_board = np.zeros(shape=(8, 8, 8))
         self.init_layer_board()
+
+        self.engine = chess.engine.SimpleEngine.popen_uci(
+            "/users/rkrish16/data/rkrish16/other/chessRL/data/stockfish/stockfish-ubuntu-x86-64-avx2"
+        )
+        self.limit = chess.engine.Limit(depth=10)
+        self.win_score = 10000
 
     def init_layer_board(self):
         """
@@ -79,72 +86,74 @@ class Board(object):
                 Difference in material value after the move
         """
         piece_balance_before = self.get_material_value()
+        player = self.board.turn
         self.board.push(action)
         self.update_layer_board(action)
         piece_balance_after = self.get_material_value()
         auxiliary_reward = (
             piece_balance_after - piece_balance_before
         ) * self.capture_reward_factor
+        score = self.engine.analyse(self.board, self.limit)["score"]
+        if player == chess.WHITE:
+            reward = score.white().score(mate_score=self.win_score)
+        else:
+            reward = score.black().score(mate_score=self.win_score)
         result = self.board.result()
         if result == "*":
-            reward = 0
+            # reward = 0
             episode_end = False
         elif result == "1-0":
-            reward = 1
+            # reward = 1
             episode_end = True
         elif result == "0-1":
-            reward = -1
+            # reward = -1
             episode_end = True
         elif result == "1/2-1/2":
-            reward = 0
+            # reward = 0
             episode_end = True
-        reward += auxiliary_reward
+        # reward += auxiliary_reward
 
         return episode_end, reward
 
     def puzzle_step(self, action, answer):
-        piece_balance_before = self.get_material_value()
+        # piece_balance_before = self.get_material_value()
         self.board.push(action)
         self.update_layer_board(action)
-        piece_balance_after = self.get_material_value()
-        auxiliary_reward = (
-            piece_balance_after - piece_balance_before
-        ) * self.capture_reward_factor
+        # piece_balance_after = self.get_material_value()
+        # auxiliary_reward = (
+        #     piece_balance_after - piece_balance_before
+        # ) * self.capture_reward_factor
         if self.board.is_checkmate():
-            reward = 1
+            reward = self.win_score
             episode_end = True
         elif action.uci() == answer:
-            reward = 1
+            reward = self.win_score
             episode_end = True
         else:
-            reward = -1
+            reward = -1 * self.win_score
             episode_end = True
-        reward += auxiliary_reward
+        # reward += auxiliary_reward
 
         return episode_end, reward
 
     def _black_engine_step(self, action, engine):
-        piece_balance_before = self.get_material_value()
         self.board.push(action)
         self.update_layer_board(action)
-        piece_balance_after = self.get_material_value()
-        auxiliary_reward = (
-            piece_balance_after - piece_balance_before
-        ) * self.capture_reward_factor
         if self.board.is_checkmate():
-            reward = 1
             episode_end = True
+            score = self.engine.analyse(self.board, self.limit)["score"]
+            reward = score.white().score(mate_score=self.win_score)
         else:
             engine_move = engine.predict(self.board)
             self.board.push(engine_move)
             self.update_layer_board(engine_move)
+            score = self.engine.analyse(self.board, self.limit)["score"]
             if self.board.is_checkmate():
-                reward = -1
+                reward = score.white().score(mate_score=self.win_score)
                 episode_end = True
             else:
-                reward = 0
+                reward = score.white().score(mate_score=self.win_score)
                 episode_end = False
-        reward += auxiliary_reward
 
         return episode_end, reward
 
@@ -154,22 +163,18 @@ class Board(object):
         self.update_layer_board(engine_move)
         piece_balance_after = self.get_material_value()
         if self.board.is_checkmate():
-            reward = -1
+            score = self.engine.analyse(self.board, self.limit)["score"]
+            reward = score.black().score(mate_score=self.win_score)
             episode_end = True
         else:
-            piece_balance_before = self.get_material_value()
             self.board.push(action)
             self.update_layer_board(action)
-            auxiliary_reward = (
-                piece_balance_after - piece_balance_before
-            ) * self.capture_reward_factor
+            score = self.engine.analyse(self.board, self.limit)["score"]
+            reward = score.black().score(mate_score=self.win_score)
             if self.board.is_checkmate():
-                reward = 1
                 episode_end = True
             else:
-                reward = 0
                 episode_end = False
-        reward += auxiliary_reward
 
         return episode_end, reward
 

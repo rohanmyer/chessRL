@@ -223,7 +223,10 @@ class PuzzleLearner(TD_search):
         Play a single puzzle.
         """
         state = np.expand_dims(self.env.layer_board.copy(), axis=0)
-        move = self.select_move(state)
+        if random.random() < self.epsilon:
+            move = random.choice(list(self.env.board.generate_legal_moves()))
+        else:
+            move = self.select_move(state)
         answer = self.current_puzzle["best_move"]
         episode_end, reward = self.env.puzzle_step(move, answer)
         sucstate = np.expand_dims(self.env.layer_board, axis=0)

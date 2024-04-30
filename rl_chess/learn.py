@@ -5,6 +5,8 @@ import gc
 from tqdm import tqdm
 import random
 
+FOLDER_PATH = "/users/rkrish16/data/rkrish16/other/chessRL"
+
 
 def softmax(x, temperature=1):
     return np.exp(x / temperature) / np.sum(np.exp(x / temperature))
@@ -45,12 +47,17 @@ class TD_search(object):
 
     def _load_reward_trace(self):
         try:
-            self.reward_trace = np.load(f"rl_chess/logs/{self.name}_reward_trace.npy")
+            self.reward_trace = np.load(
+                f"{FOLDER_PATH}/rl_chess/logs/{self.name}_reward_trace.npy"
+            )
         except FileNotFoundError:
             self.reward_trace = []
 
     def _save_reward_trace(self):
-        np.save(f"rl_chess/logs/{self.name}_reward_trace.npy", self.reward_trace)
+        np.save(
+            f"{FOLDER_PATH}/rl_chess/logs/{self.name}_reward_trace.npy",
+            self.reward_trace,
+        )
 
     def learn(self, iters=40, c=20, timelimit_seconds=3600, maxiter=80):
         """
@@ -66,7 +73,9 @@ class TD_search(object):
             self.env.reset()
             if k % c == 0:
                 self.agent.fix_model()
-                self.agent.save(f"rl_chess/weights/{self.name}_{self.agent.network}")
+                self.agent.save(
+                    f"{FOLDER_PATH}/rl_chess/weights/{self.name}_{self.agent.network}"
+                )
                 self._save_reward_trace()
             self.play_game(maxiter)
             # if starttime + timelimit_seconds < time.time():
@@ -211,7 +220,9 @@ class PuzzleLearner(TD_search):
             if k % 10 == 0:
                 self.update_agent()
             if k % 1000 == 0:
-                self.agent.save(f"rl_chess/weights/{self.name}_{self.agent.network}")
+                self.agent.save(
+                    f"{FOLDER_PATH}/rl_chess/weights/{self.name}_{self.agent.network}"
+                )
                 self._save_reward_trace()
                 gc.collect()
             self.play_puzzle()

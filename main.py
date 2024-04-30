@@ -3,7 +3,7 @@ import os
 import pickle
 import sys
 
-WEIGHTS_PATH = "rl_chess/weights"
+WEIGHTS_PATH = "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights"
 ENGINE_PATH = "/users/rkrish16/data/rkrish16/other/chessRL/data/stockfish/stockfish-ubuntu-x86-64-avx2"
 NETWORK = "big"
 env = environment.Board(FEN=None)
@@ -20,7 +20,7 @@ def self_train():
 
 
 def puzzle_train():
-    PUZZLE_PATH = "data/lichess_puzzles.pkl"
+    PUZZLE_PATH = "/users/rkrish16/data/rkrish16/other/chessRL/data/lichess_puzzles.pkl"
     print("Loading the puzzles...")
     with open(PUZZLE_PATH, "rb") as file:
         puzzles = pickle.load(file)

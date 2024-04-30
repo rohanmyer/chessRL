@@ -31,6 +31,7 @@ class TD_search(object):
         self.env = env
         self.agent = agent
         self.gamma = gamma
+        self.epsilon = 0.1
         self.memsize = memsize
         self.batch_size = batch_size
         self.mem_state = np.zeros(shape=(1, 8, 8, 8))
@@ -105,18 +106,22 @@ class TD_search(object):
         """
         Select a move based on the current state of the board.
         """
-        next_states = []
-        for move in self.env.board.generate_legal_moves():
-            self.env.step(move)
-            next_state = self.env.layer_board.copy()
-            next_states.append(next_state)
-            self.env.board.pop()
+        if np.random.rand() < self.epsilon:
+            moves = list(self.env.board.generate_legal_moves())
+            return np.random.choice(moves)
+        else:
+            next_states = []
+            for move in self.env.board.generate_legal_moves():
+                self.env.step(move)
+                next_state = self.env.layer_board.copy()
+                next_states.append(next_state)
+                self.env.board.pop()
 
-        next_states = np.array(next_states)
-        move_values = self.agent.predict_batch(next_states)
-        move_idx = np.argmax(move_values)
-        best_move = list(self.env.board.generate_legal_moves())[move_idx]
-        return best_move
+            next_states = np.array(next_states)
+            move_values = self.agent.predict_batch(next_states)
+            move_idx = np.argmax(move_values)
+            best_move = list(self.env.board.generate_legal_moves())[move_idx]
+            return best_move
 
     def compute_error(self, state, reward, sucstate):
         """

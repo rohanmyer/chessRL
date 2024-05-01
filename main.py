@@ -7,7 +7,7 @@ WEIGHTS_PATH = "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights"
 ENGINE_PATH = "/users/rkrish16/data/rkrish16/other/chessRL/data/stockfish/stockfish-ubuntu-x86-64-avx2"
 NETWORK = "custom"
 env = environment.Board(FEN=None)
-player = agent.Agent(lr=0.01, network=NETWORK)
+player = agent.Agent(lr=0.001, network=NETWORK)
 
 
 def self_train():

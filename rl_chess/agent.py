@@ -31,7 +31,7 @@ class EngineAgent(object):
 
 class Agent(object):
 
-    def __init__(self, lr=0.01, network="big"):
+    def __init__(self, lr=0.001, network="big"):
         self.optimizer = Adam(learning_rate=lr)
         self.model = Model()
         self.proportional_error = False

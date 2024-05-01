@@ -1,42 +1,21 @@
-from keras.layers import Input, Dense, Flatten, Concatenate, Conv2D, Dropout
+from keras.models import Sequential
+from keras.layers import (
+    Input,
+    Dense,
+    Flatten,
+    Concatenate,
+    Conv2D,
+    Dropout,
+    Activation,
+    BatchNormalization,
+    LeakyReLU,
+)
+from keras.layers import add as add_layer
 from keras.losses import mean_squared_error
 from keras.models import Model, clone_model, load_model
 from keras.optimizers import SGD, Adam, RMSprop
 import numpy as np
 import chess.engine
-
-
-class RandomAgent(object):
-
-    def __init__(self, color=1):
-        self.color = color
-
-    def predict(self, board_layer):
-        return np.random.randint(-5, 5) / 5
-
-    def select_move(self, board):
-        moves = [x for x in board.generate_legal_moves()]
-        return np.random.choice(moves)
-
-
-class GreedyAgent(object):
-
-    def __init__(self, color=-1):
-        self.color = color
-
-    def predict(self, layer_board, noise=True):
-        layer_board1 = layer_board[0, :, :, :]
-        pawns = 1 * np.sum(layer_board1[0, :, :])
-        rooks = 5 * np.sum(layer_board1[1, :, :])
-        minor = 3 * np.sum(layer_board1[2:4, :, :])
-        queen = 9 * np.sum(layer_board1[4, :, :])
-
-        maxscore = 40
-        material = pawns + rooks + minor + queen
-        board_value = self.color * material / maxscore
-        if noise:
-            added_noise = np.random.randn() / 1e3
-        return board_value + added_noise
 
 
 class EngineAgent(object):
@@ -52,18 +31,12 @@ class EngineAgent(object):
 
 class Agent(object):
 
-    def __init__(self, lr=0.003, network="big"):
-        self.optimizer = RMSprop(learning_rate=lr)
+    def __init__(self, lr=0.01, network="big"):
+        self.optimizer = Adam(learning_rate=lr)
         self.model = Model()
         self.proportional_error = False
         self.network = network
-        if network == "simple":
-            self.init_simple_network()
-        elif network == "super_simple":
-            self.init_super_simple_network()
-        elif network == "alt":
-            self.init_altnet()
-        elif network == "big":
+        if network == "big":
             self.init_bignet()
         else:
             self.init_network()
@@ -79,98 +52,82 @@ class Agent(object):
         self.fixed_model.set_weights(self.model.get_weights())
 
     def init_network(self):
-        layer_state = Input(shape=(8, 8, 8), name="state")
+        """
+        Builds the neural network architecture
+        """
+        main_input = Input(shape=(8, 8, 8), name="main_input")
 
-        openfile = Conv2D(
-            3, (8, 1), padding="valid", activation="relu", name="fileconv"
-        )(
-            layer_state
-        )  # 3,8,1
-        openrank = Conv2D(
-            3, (1, 8), padding="valid", activation="relu", name="rankconv"
-        )(
-            layer_state
-        )  # 3,1,8
-        quarters = Conv2D(
-            3,
-            (4, 4),
-            padding="valid",
-            activation="relu",
-            name="quarterconv",
-            strides=(4, 4),
-        )(
-            layer_state
-        )  # 3,2,2
-        large = Conv2D(8, (6, 6), padding="valid", activation="relu", name="largeconv")(
-            layer_state
-        )  # 8,2,2
+        x = self.build_convolutional_layer(main_input)
 
-        board1 = Conv2D(16, (3, 3), padding="valid", activation="relu", name="board1")(
-            layer_state
-        )  # 16,6,6
-        board2 = Conv2D(20, (3, 3), padding="valid", activation="relu", name="board2")(
-            board1
-        )  # 20,4,4
-        board3 = Conv2D(24, (3, 3), padding="valid", activation="relu", name="board3")(
-            board2
-        )  # 24,2,2
+        # add a high amount of residual layers
+        for i in range(20):
+            x = self.build_residual_layer(x)
 
-        flat_file = Flatten()(openfile)
-        flat_rank = Flatten()(openrank)
-        flat_quarters = Flatten()(quarters)
-        flat_large = Flatten()(large)
+        x = self.build_value_head(x)
 
-        flat_board = Flatten()(board1)
-        flat_board3 = Flatten()(board3)
+        self.model = Model(inputs=main_input, outputs=x, name="chess_model")
 
-        dense1 = Concatenate(name="dense_bass")(
-            [flat_file, flat_rank, flat_quarters, flat_large, flat_board, flat_board3]
-        )
-        dropout1 = Dropout(rate=0.1)(dense1)
-        dense2 = Dense(128, activation="sigmoid")(dropout1)
-        dense3 = Dense(64, activation="sigmoid")(dense2)
-        dropout3 = Dropout(rate=0.1)(dense3, training=True)
-        dense4 = Dense(32, activation="sigmoid")(dropout3)
-        dropout4 = Dropout(rate=0.1)(dense4, training=True)
-
-        value_head = Dense(1)(dropout4)
-        self.model = Model(inputs=layer_state, outputs=[value_head])
-        self.model.compile(optimizer=self.optimizer, loss=[mean_squared_error])
-
-    def init_simple_network(self):
-
-        layer_state = Input(shape=(8, 8, 8), name="state")
-        conv1 = Conv2D(8, (3, 3), activation="sigmoid")(layer_state)
-        conv2 = Conv2D(6, (3, 3), activation="sigmoid")(conv1)
-        conv3 = Conv2D(4, (3, 3), activation="sigmoid")(conv2)
-        flat4 = Flatten()(conv3)
-        dense5 = Dense(24, activation="sigmoid")(flat4)
-        dense6 = Dense(8, activation="sigmoid")(dense5)
-        value_head = Dense(1)(dense6)
-
-        self.model = Model(inputs=layer_state, outputs=value_head)
         self.model.compile(optimizer=self.optimizer, loss=mean_squared_error)
 
-    def init_super_simple_network(self):
-        layer_state = Input(shape=(8, 8, 8), name="state")
-        conv1 = Conv2D(8, (3, 3), activation="sigmoid")(layer_state)
-        flat4 = Flatten()(conv1)
-        dense5 = Dense(10, activation="sigmoid")(flat4)
-        value_head = Dense(1)(dense5)
+    def build_convolutional_layer(self, input_layer):
+        """
+        Builds a convolutional layer
+        """
 
-        self.model = Model(inputs=layer_state, outputs=value_head)
-        self.model.compile(optimizer=self.optimizer, loss=mean_squared_error)
+        layer = Conv2D(
+            filters=256,
+            kernel_size=(3, 3),
+            strides=(1, 1),
+            padding="same",
+            data_format="channels_first",
+            use_bias=False,
+        )(input_layer)
+        layer = BatchNormalization(axis=1)(layer)
+        layer = Activation("relu")(layer)
+        return layer
 
-    def init_altnet(self):
-        layer_state = Input(shape=(8, 8, 8), name="state")
-        conv1 = Conv2D(6, (1, 1), activation="sigmoid")(layer_state)
-        flat2 = Flatten()(conv1)
-        dense3 = Dense(128, activation="sigmoid")(flat2)
+    def build_residual_layer(self, input_layer):
+        """
+        Builds a residual layer
+        """
+        # first convolutional layer
+        layer = self.build_convolutional_layer(input_layer)
+        # second convolutional layer with skip connection
+        layer = Conv2D(
+            filters=256,
+            kernel_size=(3, 3),
+            strides=(1, 1),
+            padding="same",
+            data_format="channels_first",
+            use_bias=False,
+        )(layer)
+        layer = BatchNormalization(axis=1)(layer)
+        # skip connection
+        layer = add_layer([layer, input_layer])
+        # activation function
+        layer = Activation("relu")(layer)
+        return layer
 
-        value_head = Dense(1)(dense3)
-
-        self.model = Model(inputs=layer_state, outputs=value_head)
-        self.model.compile(optimizer=self.optimizer, loss=mean_squared_error)
+    def build_value_head(self, input) -> Model:
+        """
+        Builds the value head of the neural network
+        """
+        layer = Conv2D(
+            1,
+            kernel_size=(1, 1),
+            strides=(1, 1),
+            padding="same",
+            data_format="channels_first",
+        )(input)
+        layer = BatchNormalization(axis=1)(layer)
+        layer = Activation("relu")(layer)
+        layer = Flatten()(layer)
+        layer = Dense(256)(layer)
+        layer = Activation("relu")(layer)
+        # output shape == 1, because we want 1 value: the estimated outcome from the position
+        # tanh activation function maps the output to [-1, 1]
+        layer = Dense(1, activation="tanh")(layer)
+        return layer
 
     def init_bignet(self):
         layer_state = Input(shape=(8, 8, 8), name="state")

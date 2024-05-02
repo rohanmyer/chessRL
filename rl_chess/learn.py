@@ -18,7 +18,14 @@ def sigmoid(x):
 
 class TD_search(object):
     def __init__(
-        self, env, agent, name="self", gamma=0.9, memsize=2000, batch_size=256
+        self,
+        env,
+        agent,
+        name="self",
+        gamma=0.9,
+        memsize=2000,
+        batch_size=256,
+        epsilon=0.1,
     ):
         """
         Initialize a chess algorithm that uses Q Learning for decision making.
@@ -33,7 +40,7 @@ class TD_search(object):
         self.env = env
         self.agent = agent
         self.gamma = gamma
-        self.epsilon = 0.1
+        self.epsilon = epsilon
         self.memsize = memsize
         self.batch_size = batch_size
         self.mem_state = np.zeros(shape=(1, 8, 8, 8))
@@ -42,6 +49,7 @@ class TD_search(object):
         self.mem_error = np.zeros(shape=(1))
         self.mem_episode_active = np.ones(shape=(1))
         self.reward_trace = []
+        self.td_error_trace = []
         self.piece_balance_trace = []
         self._load_reward_trace()
 
@@ -71,13 +79,21 @@ class TD_search(object):
         starttime = time.time()
         for k in tqdm(range(iters)):
             self.env.reset()
-            if k % c == 0:
+            if k % 2 == 0:
                 self.agent.fix_model()
+            if k % c == 0:
                 self.agent.save(
                     f"{FOLDER_PATH}/rl_chess/weights/{self.name}_{self.agent.network}"
                 )
                 self._save_reward_trace()
             self.play_game(maxiter)
+            self.update_agent()
+            self.td_error_trace.append(np.mean(self.mem_error))
+            np.save(
+                f"/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/logs/{self.name}_td_error_trace.npy",
+                self.td_error_trace,
+            )
+            gc.collect()
             # if starttime + timelimit_seconds < time.time():
             #     break
 
@@ -104,11 +120,7 @@ class TD_search(object):
                 state, reward, piece_balance, sucstate, error, episode_end
             )
             turn_count += 1
-            if turn_count % 10 == 0:
-                self.update_agent()
-                gc.collect()
             # pbar.update(1)
-
         # print(f"Game ended with reward {reward} in {turn_count} half-moves.")
 
     def select_move(self, state):
@@ -121,7 +133,8 @@ class TD_search(object):
         else:
             next_states = []
             for move in self.env.board.generate_legal_moves():
-                self.env.step(move)
+                self.env.board.push(move)
+                self.env.update_layer_board(move)
                 next_state = self.env.layer_board.copy()
                 next_states.append(next_state)
                 self.env.board.pop()
@@ -215,9 +228,9 @@ class PuzzleLearner(TD_search):
         """
         starttime = time.time()
         for k in tqdm(range(iters)):
-            if k % c == 0:
+            if k % 200 == 0:
                 self.agent.fix_model()
-            if k % 10 == 0:
+            if k % 100 == 0:
                 self.update_agent()
             if k % 1000 == 0:
                 self.agent.save(

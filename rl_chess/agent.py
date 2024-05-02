@@ -19,9 +19,9 @@ import chess.engine
 
 
 class EngineAgent(object):
-    def __init__(self, engine_path, color="black"):
+    def __init__(self, engine_path, color="black", depth=20):
         self.engine = chess.engine.SimpleEngine.popen_uci(engine_path)
-        self.limit = chess.engine.Limit(depth=10)
+        self.limit = chess.engine.Limit(depth=depth)
         self.color = color
 
     def predict(self, board):
@@ -57,10 +57,11 @@ class Agent(object):
         """
         main_input = Input(shape=(8, 8, 8), name="main_input")
 
+        self.num_filters = 256
         x = self.build_convolutional_layer(main_input)
 
         # add a high amount of residual layers
-        for i in range(20):
+        for i in range(16):
             x = self.build_residual_layer(x)
 
         x = self.build_value_head(x)
@@ -75,7 +76,7 @@ class Agent(object):
         """
 
         layer = Conv2D(
-            filters=256,
+            filters=self.num_filters,
             kernel_size=(3, 3),
             strides=(1, 1),
             padding="same",
@@ -94,7 +95,7 @@ class Agent(object):
         layer = self.build_convolutional_layer(input_layer)
         # second convolutional layer with skip connection
         layer = Conv2D(
-            filters=256,
+            filters=self.num_filters,
             kernel_size=(3, 3),
             strides=(1, 1),
             padding="same",

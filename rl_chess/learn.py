@@ -16,6 +16,10 @@ def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
 
+def tanh(x):
+    return np.tanh(x)
+
+
 class TD_search(object):
     def __init__(
         self,
@@ -79,6 +83,7 @@ class TD_search(object):
         starttime = time.time()
         for k in tqdm(range(iters)):
             self.env.reset()
+            self.epsilon = sigmoid(-k / 100000)
             if k % 2 == 0:
                 self.agent.fix_model()
             if k % c == 0:
@@ -89,10 +94,10 @@ class TD_search(object):
             self.play_game(maxiter)
             self.update_agent()
             self.td_error_trace.append(np.mean(self.mem_error))
-            np.save(
-                f"/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/logs/{self.name}_td_error_trace.npy",
-                self.td_error_trace,
-            )
+            # np.save(
+            #     f"/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/logs/{self.name}_td_error_trace.npy",
+            #     self.td_error_trace,
+            # )
             gc.collect()
             # if starttime + timelimit_seconds < time.time():
             #     break
@@ -112,6 +117,7 @@ class TD_search(object):
             state = np.expand_dims(self.env.layer_board.copy(), axis=0)
             move = self.select_move(state)
             episode_end, reward = self.env.step(move)
+            reward = tanh(reward / self.env.win_score)
             sucstate = np.expand_dims(self.env.layer_board, axis=0)
             error = self.compute_error(state, reward, sucstate)
             piece_balance = 0  # self.env.piece_balance()
@@ -253,6 +259,7 @@ class PuzzleLearner(TD_search):
             move = self.select_move(state)
         answer = self.current_puzzle["best_move"]
         episode_end, reward = self.env.puzzle_step(move, answer)
+        reward = tanh(reward / self.env.win_score)
         sucstate = np.expand_dims(self.env.layer_board, axis=0)
         error = self.compute_error(state, reward, sucstate)
 
@@ -280,8 +287,12 @@ class EngineLearner(TD_search):
         # pbar = tqdm(total=maxiter, desc="Moves in game")
         while not episode_end and turn_count < maxiter:
             state = np.expand_dims(self.env.layer_board.copy(), axis=0)
-            move = self.select_move(state)
+            if random.random() < self.epsilon:
+                move = random.choice(list(self.env.board.generate_legal_moves()))
+            else:
+                move = self.select_move(state)
             episode_end, reward = self.env.engine_step(move, self.opponent)
+            reward = tanh(reward / self.env.win_score)
             sucstate = np.expand_dims(self.env.layer_board, axis=0)
             error = self.compute_error(state, reward, sucstate)
             piece_balance = 0  # self.env.piece_balance()
@@ -289,10 +300,6 @@ class EngineLearner(TD_search):
             self.record_experience(
                 state, reward, piece_balance, sucstate, error, episode_end
             )
-            turn_count += 1
-            if turn_count % 10 == 0:
-                self.update_agent()
-                gc.collect()
             # pbar.update(1)
 
         # print(f"Game ended with reward {reward} in {turn_count} half-moves.")

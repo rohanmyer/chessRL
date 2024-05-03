@@ -35,7 +35,7 @@ def puzzle_train():
 
 
 def engine_train():
-    opponent = agent.EngineAgent(ENGINE_PATH)
+    opponent = agent.EngineAgent(ENGINE_PATH, depth=1)
     name = f"{opponent.color}_engine"
     if os.path.exists(f"{WEIGHTS_PATH}/{name}_{NETWORK}"):
         player.load(f"{WEIGHTS_PATH}/{name}_{NETWORK}")

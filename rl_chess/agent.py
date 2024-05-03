@@ -38,6 +38,8 @@ class Agent(object):
         self.network = network
         if network == "big":
             self.init_bignet()
+        elif network == "simple":
+            self.init_simple_network()
         else:
             self.init_network()
 
@@ -50,6 +52,20 @@ class Agent(object):
         self.fixed_model = clone_model(self.model)
         self.fixed_model.compile(optimizer=self.optimizer, loss="mse", metrics=["mae"])
         self.fixed_model.set_weights(self.model.get_weights())
+
+    def init_simple_network(self):
+
+        layer_state = Input(shape=(8, 8, 8), name="state")
+        conv1 = Conv2D(8, (3, 3), activation="sigmoid")(layer_state)
+        conv2 = Conv2D(6, (3, 3), activation="sigmoid")(conv1)
+        conv3 = Conv2D(4, (3, 3), activation="sigmoid")(conv2)
+        flat4 = Flatten()(conv3)
+        dense5 = Dense(24, activation="sigmoid")(flat4)
+        dense6 = Dense(8, activation="sigmoid")(dense5)
+        value_head = Dense(1)(dense6)
+
+        self.model = Model(inputs=layer_state, outputs=value_head)
+        self.model.compile(optimizer=self.optimizer, loss=mean_squared_error)
 
     def init_network(self):
         """
@@ -203,9 +219,11 @@ class Agent(object):
             suc_state_values
         )
         # Perform a step of minibatch Gradient Descent.
+        print(np.mean(V_target), np.std(V_target))
         self.model.fit(x=states, y=V_target, epochs=1, verbose=0)
 
         V_state = self.model.predict(states, verbose=0)  # the expected future returns
+        print(np.mean(V_state), np.std(V_state))
         td_errors = V_target - np.squeeze(V_state)
 
         return td_errors

@@ -25,7 +25,23 @@ players = []
 
 players.append(
     {
-        "player": "rl_chess/weights/may_1_11hr/puzzle_custom",
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/black_engine_custom",
+        "name": "engine_base",
+        "engine": False,
+    }
+)
+
+players.append(
+    {
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/engine_ft_custom",
+        "name": "engine_ft",
+        "engine": False,
+    }
+)
+
+players.append(
+    {
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/puzzle_custom",
         "name": "puzzle_base",
         "engine": False,
     }
@@ -33,18 +49,26 @@ players.append(
 
 players.append(
     {
-        "player": "rl_chess/weights/may_1_11hr/self_custom",
-        "name": "self_base",
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/puzzle_engine_custom",
+        "name": "puzzle_engine",
         "engine": False,
     }
 )
 
 players.append(
-    {"player": "rl_chess/weights/self_custom", "name": "puzzle_ft", "engine": False}
+    {
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/puzzle_self_custom",
+        "name": "puzzle_self",
+        "engine": False,
+    }
 )
 
 players.append(
-    {"player": "rl_chess/weights/puzzle_custom", "name": "self_ft", "engine": False}
+    {
+        "player": "/users/rkrish16/data/rkrish16/other/chessRL/rl_chess/weights/self_custom",
+        "name": "self_base",
+        "engine": False,
+    }
 )
 
 weak_engine = agent.EngineAgent(ENGINE_PATH, depth=1)
@@ -134,5 +158,5 @@ for white_player in players:
 
 import json
 
-with open("results.json", "w") as file:
+with open("/users/rkrish16/data/rkrish16/other/chessRL/results.json", "w") as file:
     json.dump(results, file)

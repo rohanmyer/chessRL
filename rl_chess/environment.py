@@ -124,13 +124,13 @@ class Board(object):
         #     piece_balance_after - piece_balance_before
         # ) * self.capture_reward_factor
         if self.board.is_checkmate():
-            reward = 1
+            reward = self.win_score
             episode_end = True
         elif action.uci() == answer:
-            reward = 1
+            reward = self.win_score
             episode_end = True
         else:
-            reward = -1
+            reward = -1 * self.win_score
             episode_end = True
         # reward += auxiliary_reward
 

@@ -211,8 +211,8 @@ class TD_search(object):
 
 
 class PuzzleLearner(TD_search):
-    def __init__(self, env, agent, puzzles):
-        super(PuzzleLearner, self).__init__(env, agent, name="puzzle")
+    def __init__(self, env, agent, puzzles, name="puzzle"):
+        super(PuzzleLearner, self).__init__(env, agent, name=name)
         self.current_puzzle = None
         self.puzzles = puzzles
         self.load_puzzle()
@@ -269,8 +269,9 @@ class PuzzleLearner(TD_search):
 
 
 class EngineLearner(TD_search):
-    def __init__(self, env, agent, opponent):
-        name = f"{opponent.color}_engine"
+    def __init__(self, env, agent, opponent, name=None):
+        if name is None:
+            name = f"{opponent.color}_engine"
         super(EngineLearner, self).__init__(env, agent, name=name)
         self.opponent = opponent
 

@@ -47,3 +47,13 @@ To train an RL agent to play from puzzle scenarios, run `python main.py puzzle`
 ## Train Against Stockfish
 
 To train an RL agent to play from full games against the Stockfish engine, run `python main.py engine`
+
+## Models
+
+1. Self-Play
+2. Engine
+3. Puzzle
+4. Self-Play + Puzzle
+5. Engine + Puzzle
+6. Puzzle + Self-Play
+7. Puzzle + Engine
